@@ -38,6 +38,9 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
         case 'send-test-request':
           await this._handleTestRequest(data, webviewView.webview);
           break;
+        case 'run-load-test':
+          await this._handleLoadTest(data, webviewView.webview);
+          break;
       }
     });
   }
@@ -216,6 +219,160 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
         type: 'test-request-response',
         response: errorResponse,
       });
+    }
+  }
+
+  private async _handleLoadTest(data: any, webview: vscode.Webview) {
+    console.log('[Load Test] Starting load test:', data.config);
+    
+    try {
+      const { endpoint, method, concurrency, totalRequests, body } = data.config;
+      
+      // Validation
+      const maxConcurrency = Math.min(concurrency, 100);
+      const maxRequests = Math.min(totalRequests, 1000);
+      
+      console.log('[Load Test] Config validated:', { maxConcurrency, maxRequests });
+      
+      const fetch = (await import('node-fetch')).default;
+      const url = `http://localhost:3000${endpoint}`;
+      
+      const latencies: number[] = [];
+      let successCount = 0;
+      let errorCount = 0;
+      const startTime = Date.now();
+      
+      // Batch processing to prevent blocking
+      const batchSize = maxConcurrency;
+      const batches = Math.ceil(maxRequests / batchSize);
+      
+      console.log('[Load Test] Starting execution with', batches, 'batches');
+      
+      for (let i = 0; i < batches; i++) {
+        const batchRequests = Math.min(batchSize, maxRequests - (i * batchSize));
+        const promises = [];
+        
+        // Create batch of concurrent requests
+        for (let j = 0; j < batchRequests; j++) {
+          promises.push(this._executeRequest(url, method, body, latencies));
+        }
+        
+        // Execute batch concurrently
+        const results = await Promise.allSettled(promises);
+        
+        // Count successes and errors
+        results.forEach(result => {
+          if (result.status === 'fulfilled' && result.value.success) {
+            successCount++;
+          } else {
+            errorCount++;
+          }
+        });
+        
+        // Send progress update
+        const completed = Math.min((i + 1) * batchSize, maxRequests);
+        const progress = (completed / maxRequests) * 100;
+        
+        console.log('[Load Test] Progress:', progress.toFixed(1) + '%', `(${completed}/${maxRequests})`);
+        
+        webview.postMessage({
+          type: 'load-test-progress',
+          progress,
+          completed,
+          total: maxRequests,
+          successCount,
+          errorCount,
+        });
+        
+        // Small delay between batches to prevent overwhelming
+        if (i < batches - 1) {
+          await new Promise(resolve => setTimeout(resolve, 10));
+        }
+      }
+      
+      // Calculate final statistics
+      const duration = Date.now() - startTime;
+      const avgLatency = latencies.length > 0 
+        ? latencies.reduce((a, b) => a + b, 0) / latencies.length 
+        : 0;
+      const minLatency = latencies.length > 0 ? Math.min(...latencies) : 0;
+      const maxLatency = latencies.length > 0 ? Math.max(...latencies) : 0;
+      const rps = duration > 0 ? (maxRequests / duration) * 1000 : 0;
+      const successRate = maxRequests > 0 ? (successCount / maxRequests) * 100 : 0;
+      
+      console.log('[Load Test] Completed:', {
+        duration,
+        avgLatency: avgLatency.toFixed(2),
+        rps: rps.toFixed(2),
+        successRate: successRate.toFixed(1) + '%',
+      });
+      
+      // Send final results
+      webview.postMessage({
+        type: 'load-test-result',
+        results: {
+          totalRequests: maxRequests,
+          successCount,
+          errorCount,
+          duration,
+          avgLatency,
+          minLatency,
+          maxLatency,
+          rps,
+          successRate,
+        },
+      });
+      
+    } catch (error) {
+      console.error('[Load Test] Error:', error);
+      webview.postMessage({
+        type: 'load-test-result',
+        results: {
+          totalRequests: 0,
+          successCount: 0,
+          errorCount: 1,
+          duration: 0,
+          avgLatency: 0,
+          minLatency: 0,
+          maxLatency: 0,
+          rps: 0,
+          successRate: 0,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        },
+      });
+    }
+  }
+
+  private async _executeRequest(
+    url: string,
+    method: string,
+    body: any,
+    latencies: number[]
+  ): Promise<{ success: boolean; status?: number; error?: any }> {
+    const requestStart = Date.now();
+    
+    try {
+      const fetch = (await import('node-fetch')).default;
+      
+      const options: any = {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        timeout: 10000, // 10 second timeout
+      };
+      
+      if (['POST', 'PUT', 'PATCH'].includes(method.toUpperCase()) && body) {
+        options.body = body;
+      }
+      
+      const response = await fetch(url, options);
+      const latency = Date.now() - requestStart;
+      latencies.push(latency);
+      
+      return { success: response.ok, status: response.status };
+    } catch (error) {
+      const latency = Date.now() - requestStart;
+      latencies.push(latency);
+      return { success: false, error };
     }
   }
 }

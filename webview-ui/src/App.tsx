@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import { Tabs, Container, Title, Text, Loader, Center, Stack } from '@mantine/core';
 import { ApiData } from './types/api';
 import DocumentationTab from './components/DocumentationTab';
-import TestingTab from './components/TestingTab';
+import SimulationTab from './components/SimulationTab';
 import AnalysisTab from './components/AnalysisTab';
+import PerformanceTab from './components/PerformanceTab';
 
 // Mock data untuk tampilan awal
 const mockApiData: ApiData = {
@@ -102,7 +103,8 @@ function App() {
         <Tabs value={activeTab} onChange={setActiveTab}>
           <Tabs.List>
             <Tabs.Tab value="documentation">Dokumentasi</Tabs.Tab>
-            <Tabs.Tab value="testing">Pengujian</Tabs.Tab>
+            <Tabs.Tab value="testing">Simulasi</Tabs.Tab>
+            <Tabs.Tab value="performance">Load Test</Tabs.Tab>
             <Tabs.Tab value="analysis">Analisis</Tabs.Tab>
           </Tabs.List>
 
@@ -111,7 +113,11 @@ function App() {
           </Tabs.Panel>
 
           <Tabs.Panel value="testing" pt="md">
-            <TestingTab apiData={apiData} />
+            <SimulationTab apiData={apiData} />
+          </Tabs.Panel>
+
+          <Tabs.Panel value="performance" pt="md">
+            <PerformanceTab apiData={apiData} />
           </Tabs.Panel>
 
           <Tabs.Panel value="analysis" pt="md">
