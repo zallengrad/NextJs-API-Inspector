@@ -266,44 +266,46 @@ function DocumentationTab({ apiData }: DocumentationTabProps) {
                 📝 Parameters
               </Title>
 
-              <Table striped highlightOnHover>
-                <Table.Thead>
-                  <Table.Tr>
-                    <Table.Th>Name</Table.Th>
-                    <Table.Th>Type</Table.Th>
-                    <Table.Th>Location</Table.Th>
-                    <Table.Th>Required</Table.Th>
-                    <Table.Th>Description</Table.Th>
-                  </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>
-                  {endpoint.params.map((param, paramIndex) => (
-                    <Table.Tr key={paramIndex}>
-                      <Table.Td>
-                        <Code>{param.name}</Code>
-                      </Table.Td>
-                      <Table.Td>
-                        <Badge variant="light" size="sm">
-                          {param.type}
-                        </Badge>
-                      </Table.Td>
-                      <Table.Td>
-                        <Badge variant="outline" size="sm">
-                          {param.location}
-                        </Badge>
-                      </Table.Td>
-                      <Table.Td>
-                        <Badge color={param.required ? 'red' : 'gray'} size="sm">
-                          {param.required ? 'Required' : 'Optional'}
-                        </Badge>
-                      </Table.Td>
-                      <Table.Td>
-                        <Text size="sm">{param.description}</Text>
-                      </Table.Td>
+              <Box style={{ overflowX: 'auto' }}>
+                <Table striped highlightOnHover style={{ minWidth: '500px' }}>
+                  <Table.Thead>
+                    <Table.Tr>
+                      <Table.Th fz="xs" style={{ minWidth: '70px' }}>Name</Table.Th>
+                      <Table.Th fz="xs" style={{ minWidth: '70px' }}>Type</Table.Th>
+                      <Table.Th fz="xs" style={{ minWidth: '70px' }}>Location</Table.Th>
+                      <Table.Th fz="xs" style={{ minWidth: '80px' }}>Required</Table.Th>
+                      <Table.Th fz="xs">Description</Table.Th>
                     </Table.Tr>
-                  ))}
-                </Table.Tbody>
-              </Table>
+                  </Table.Thead>
+                  <Table.Tbody>
+                    {endpoint.params.map((param, paramIndex) => (
+                      <Table.Tr key={paramIndex}>
+                        <Table.Td>
+                          <Code fz="xs">{param.name}</Code>
+                        </Table.Td>
+                        <Table.Td>
+                          <Badge variant="light" size="xs" style={{ whiteSpace: 'nowrap' }}>
+                            {param.type}
+                          </Badge>
+                        </Table.Td>
+                        <Table.Td>
+                          <Badge variant="outline" size="xs" style={{ whiteSpace: 'nowrap' }}>
+                            {param.location}
+                          </Badge>
+                        </Table.Td>
+                        <Table.Td>
+                          <Badge color={param.required ? 'red' : 'gray'} size="xs" style={{ whiteSpace: 'nowrap' }}>
+                            {param.required ? 'Required' : 'Optional'}
+                          </Badge>
+                        </Table.Td>
+                        <Table.Td>
+                          <Text size="xs">{param.description}</Text>
+                        </Table.Td>
+                      </Table.Tr>
+                    ))}
+                  </Table.Tbody>
+                </Table>
+              </Box>
             </Card>
           )}
 

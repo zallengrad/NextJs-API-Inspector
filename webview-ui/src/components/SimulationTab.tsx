@@ -125,7 +125,7 @@ function SimulationTab({ apiData }: SimulationTabProps) {
                   label="Request Body (JSON)"
                   value={requestBody}
                   onChange={(e) => setRequestBody(e.currentTarget.value)}
-                  minRows={8}
+                  minRows={12}
                   placeholder='{\n  "key": "value"\n}'
                   styles={{ input: { fontFamily: 'monospace', fontSize: '13px' } }}
                 />
