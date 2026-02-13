@@ -52,11 +52,37 @@
     "configuration": {
       "title": "NextJS API Inspector",
       "properties": {
+        "nextjsApiInspector.provider": {
+          "type": "string",
+          "enum": ["gemini", "openai", "custom"],
+          "default": "gemini",
+          "description": "AI Provider to use for analysis",
+          "order": 1
+        },
+        "nextjsApiInspector.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "API Key for the selected provider",
+          "order": 2
+        },
+        "nextjsApiInspector.model": {
+          "type": "string",
+          "default": "gemini-2.5-flash",
+          "description": "Model name to use",
+          "order": 3
+        },
+        "nextjsApiInspector.baseUrl": {
+          "type": "string",
+          "default": "",
+          "description": "Base URL for OpenAI-compatible APIs (optional for Gemini)",
+          "order": 4
+        },
         "nextjsApiInspector.geminiApiKey": {
           "type": "string",
           "default": "",
-          "description": "Google Gemini API Key for AI analysis",
-          "order": 1
+          "description": "[DEPRECATED] Use 'apiKey' instead. Google Gemini API Key for AI analysis",
+          "order": 5,
+          "deprecationMessage": "Use 'nextjsApiInspector.apiKey' instead"
         }
       }
     }

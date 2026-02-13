@@ -18,9 +18,15 @@ export function activate(context: vscode.ExtensionContext) {
     )
   );
 
-  // Get API key from configuration
+
+  // Get API key from configuration (with backward compatibility)
   const config = vscode.workspace.getConfiguration('nextjsApiInspector');
-  const apiKey = config.get<string>('geminiApiKey');
+  let apiKey = config.get<string>('apiKey');
+  
+  // Backward compatibility: check for old geminiApiKey setting
+  if (!apiKey) {
+    apiKey = config.get<string>('geminiApiKey');
+  }
 
   if (apiKey) {
     try {
@@ -31,11 +37,11 @@ export function activate(context: vscode.ExtensionContext) {
     }
   } else {
     vscode.window.showWarningMessage(
-      'NextJS API Inspector: Please set your Google Gemini API key in settings',
-      'Set API Key'
+      'NextJS API Inspector: Please configure your AI provider in the Configuration tab',
+      'Open Configuration'
     ).then((selection) => {
-      if (selection === 'Set API Key') {
-        vscode.commands.executeCommand('workbench.action.openSettings', 'nextjsApiInspector.geminiApiKey');
+      if (selection === 'Open Configuration') {
+        vscode.commands.executeCommand('workbench.action.openSettings', 'nextjsApiInspector');
       }
     });
   }
@@ -43,15 +49,28 @@ export function activate(context: vscode.ExtensionContext) {
   // Listen for configuration changes
   context.subscriptions.push(
     vscode.workspace.onDidChangeConfiguration((e) => {
-      if (e.affectsConfiguration('nextjsApiInspector.geminiApiKey')) {
-        const newApiKey = vscode.workspace.getConfiguration('nextjsApiInspector').get<string>('geminiApiKey');
+      // Check if any AI configuration changed
+      if (
+        e.affectsConfiguration('nextjsApiInspector.apiKey') ||
+        e.affectsConfiguration('nextjsApiInspector.geminiApiKey') ||
+        e.affectsConfiguration('nextjsApiInspector.provider')
+      ) {
+        const config = vscode.workspace.getConfiguration('nextjsApiInspector');
+        let newApiKey = config.get<string>('apiKey');
+        
+        // Backward compatibility
+        if (!newApiKey) {
+          newApiKey = config.get<string>('geminiApiKey');
+        }
+        
         if (newApiKey) {
           initializeAI(newApiKey);
-          vscode.window.showInformationMessage('NextJS API Inspector: API key updated');
+          console.log('NextJS API Inspector: AI configuration updated');
         }
       }
     })
   );
+
 
   // Listen for text document saves
   context.subscriptions.push(

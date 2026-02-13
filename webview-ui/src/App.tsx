@@ -5,6 +5,7 @@ import DocumentationTab from './components/DocumentationTab';
 import SimulationTab from './components/SimulationTab';
 import AnalysisTab from './components/AnalysisTab';
 import ProjectOverviewTab from './components/ProjectOverviewTab';
+import ConfigurationTab from './components/ConfigurationTab';
 
 // Mock data untuk tampilan awal
 const mockApiData: ApiData = {
@@ -106,6 +107,7 @@ function App() {
             <Tabs.Tab value="testing">Simulasi</Tabs.Tab>
             <Tabs.Tab value="analysis">Analisis</Tabs.Tab>
             <Tabs.Tab value="project">All API</Tabs.Tab>
+            <Tabs.Tab value="configuration">⚙️</Tabs.Tab>
           </Tabs.List>
 
           <Tabs.Panel value="documentation" pt="md">
@@ -123,6 +125,10 @@ function App() {
 
           <Tabs.Panel value="project" pt="md">
             <ProjectOverviewTab />
+          </Tabs.Panel>
+
+          <Tabs.Panel value="configuration" pt="md">
+            <ConfigurationTab />
           </Tabs.Panel>
         </Tabs>
       </Stack>

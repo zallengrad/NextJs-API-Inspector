@@ -53,6 +53,15 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
         case 'export-postman':
           await this._handleExportPostman(data, webviewView.webview);
           break;
+        case 'saveConfiguration':
+          await this._handleSaveConfiguration(data, webviewView.webview);
+          break;
+        case 'loadConfiguration':
+          await this._handleLoadConfiguration(webviewView.webview);
+          break;
+        case 'testConnection':
+          await this._handleTestConnection(data, webviewView.webview);
+          break;
       }
     });
   }
@@ -949,6 +958,7 @@ JAWAB HANYA DENGAN JSON, TIDAK ADA TEKS LAIN.`;
     return collection;
   }
 
+
   /**
    * Generate a UUID v4
    */
@@ -958,5 +968,112 @@ JAWAB HANYA DENGAN JSON, TIDAK ADA TEKS LAIN.`;
       const v = c === 'x' ? r : (r & 0x3 | 0x8);
       return v.toString(16);
     });
+  }
+
+  /**
+   * Handle save configuration request
+   */
+  private async _handleSaveConfiguration(data: any, webview: vscode.Webview) {
+    console.log('[Configuration] Saving configuration...');
+
+    try {
+      const { config } = data;
+      const vsConfig = vscode.workspace.getConfiguration('nextjsApiInspector');
+
+      // Save to VS Code settings
+      await vsConfig.update('provider', config.provider, vscode.ConfigurationTarget.Global);
+      await vsConfig.update('apiKey', config.apiKey, vscode.ConfigurationTarget.Global);
+      await vsConfig.update('model', config.model, vscode.ConfigurationTarget.Global);
+      await vsConfig.update('baseUrl', config.baseUrl || '', vscode.ConfigurationTarget.Global);
+
+      console.log('[Configuration] Configuration saved successfully');
+
+      // Send success response
+      webview.postMessage({
+        type: 'configurationSaved',
+      });
+
+      vscode.window.showInformationMessage('✅ Configuration saved successfully!');
+    } catch (error) {
+      console.error('[Configuration] Error saving configuration:', error);
+      vscode.window.showErrorMessage(
+        `Error saving configuration: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
+  /**
+   * Handle load configuration request
+   */
+  private async _handleLoadConfiguration(webview: vscode.Webview) {
+    console.log('[Configuration] Loading configuration...');
+
+    try {
+      const vsConfig = vscode.workspace.getConfiguration('nextjsApiInspector');
+
+      // Load from VS Code settings
+      let provider = vsConfig.get<string>('provider') || 'gemini';
+      let apiKey = vsConfig.get<string>('apiKey') || '';
+      let model = vsConfig.get<string>('model') || 'gemini-2.5-flash';
+      let baseUrl = vsConfig.get<string>('baseUrl') || '';
+
+      // Backward compatibility: check for old geminiApiKey setting
+      if (!apiKey) {
+        const oldApiKey = vsConfig.get<string>('geminiApiKey');
+        if (oldApiKey) {
+          apiKey = oldApiKey;
+          provider = 'gemini';
+        }
+      }
+
+      const config = {
+        provider,
+        apiKey,
+        model,
+        baseUrl,
+      };
+
+      console.log('[Configuration] Configuration loaded:', { ...config, apiKey: '***' });
+
+      // Send configuration to webview
+      webview.postMessage({
+        type: 'configurationLoaded',
+        config,
+      });
+    } catch (error) {
+      console.error('[Configuration] Error loading configuration:', error);
+    }
+  }
+
+  /**
+   * Handle test connection request
+   */
+  private async _handleTestConnection(data: any, webview: vscode.Webview) {
+    console.log('[Configuration] Testing connection...');
+
+    try {
+      const { config } = data;
+      const { ProviderFactory } = await import('./providers/ProviderFactory');
+
+      const result = await ProviderFactory.testConnection(config);
+
+      console.log('[Configuration] Test result:', result);
+
+      // Send result to webview
+      webview.postMessage({
+        type: 'testConnectionResponse',
+        success: result.success,
+        latency: result.latency,
+        error: result.error,
+      });
+    } catch (error) {
+      console.error('[Configuration] Error testing connection:', error);
+
+      webview.postMessage({
+        type: 'testConnectionResponse',
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
   }
 }
