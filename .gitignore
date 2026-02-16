@@ -9,3 +9,7 @@ out
 .DS_Store
 webview-ui/dist
 webview-ui/node_modules
+
+# SonarQube
+.scannerwork/
+.sonarqube/
